@@ -157,6 +157,8 @@ class Parser {
     }
     final typeArguments = _parseWrappedSeparatedListOf(
       parseType,
+      (t, tk) =>
+          _UnexpectedTokenException<InstantiatedType>(t, expectedKind: tk),
       cursor,
       TokenKind.Smaller,
       TokenKind.Greater,
@@ -172,7 +174,8 @@ class Parser {
   FunctionType parseFunctionType(TokenIterator cursor, [Identifier? name]) {
     name ??= parseIdentifier(cursor);
     if (name.contents != 'Function') {
-      throw _UnexpectedIdentifierException(cursor.current, {'Function'});
+      throw _UnexpectedIdentifierException<FunctionType>(
+          cursor.current, {'Function'});
     }
     final nullable = _parseNullabilitySuffix(cursor);
     FunctionParameters? parameters;
@@ -196,17 +199,34 @@ class Parser {
     return parseInstantiatedType(cursor, name);
   }
 
-  R _maybeParseWrapped<R>(
-    R Function(TokenIterator) parse,
-    R Function() orElse,
+  T _parseMaybeWrappedNode<T extends ASTNode>(
+    T Function(TokenIterator) parseWrapped,
+    T Function(TokenIterator) parseNotWrapped,
+    TokenIterator cursor,
+    TokenKind start,
+    TokenKind end,
+  ) =>
+      _parseMaybeWrapped(
+        parseWrapped,
+        parseNotWrapped,
+        (t, tk) => _UnexpectedTokenException(t, expectedKind: tk),
+        cursor,
+        start,
+        end,
+      );
+
+  R _parseMaybeWrapped<R>(
+    R Function(TokenIterator) parseWrapped,
+    R Function(TokenIterator) parseNotWrapped,
+    Exception Function(Token, TokenKind) buildUnexpectedTokenException,
     TokenIterator cursor,
     TokenKind start,
     TokenKind end,
   ) {
     if (cursor.peek!.kind != start) {
-      return orElse();
+      return parseNotWrapped(cursor);
     }
-    cursor.consume()!;
+    cursor.consume();
     var level = 0;
     final inner = cursor.consumeUntil((t) {
       final isStart = t.kind == start;
@@ -218,22 +238,53 @@ class Parser {
         level++;
       }
 
+      if (t.kind == TokenKind.EOF) {
+        throw buildUnexpectedTokenException(t, end);
+      }
+
       return level < 0;
     });
-    if (inner == null) {
-      return orElse();
-    }
-    return parse(inner.iterator..moveNext());
+    return parseWrapped(inner!.iterator..moveNext());
   }
+
+  List<T> _maybeParseWrappedSeparatedListOf<T>(
+    T Function(TokenIterator) parseWrapped,
+    Exception Function(Token, TokenKind) buildUnexpectedTokenException,
+    TokenIterator cursor,
+    TokenKind start,
+    TokenKind end,
+    TokenKind separator,
+    List<T> Function() orElse,
+  ) =>
+      _parseMaybeWrapped<List<T>>(
+          (cursor) => cursor.peek?.kind == end
+              ? []
+              : _parseSeparatedListOf(
+                  parseWrapped,
+                  cursor,
+                  separator,
+                ),
+          (cursor) => [],
+          buildUnexpectedTokenException,
+          cursor,
+          start,
+          end);
 
   R _parseWrapped<R>(
     R Function(TokenIterator) parse,
+    Exception Function(Token, TokenKind) buildUnexpectedTokenException,
     TokenIterator cursor,
     TokenKind start,
     TokenKind end,
   ) =>
-      _maybeParseWrapped(
-          parse, () => throw StateError('Fail'), cursor, start, end);
+      _parseMaybeWrapped(
+        parse,
+        (cursor) => throw buildUnexpectedTokenException(cursor.peek!, start),
+        buildUnexpectedTokenException,
+        cursor,
+        start,
+        end,
+      );
 
   List<T> _parseSeparatedListOf<T>(
     T Function(TokenIterator) parse,
@@ -247,8 +298,7 @@ class Parser {
         if (cursor.peek!.kind != separator) {
           break;
         }
-        // TODO: T
-        _expectKind(cursor, separator);
+        cursor.consume();
       }
       values.add(parse(cursor));
       isFirst = false;
@@ -256,15 +306,15 @@ class Parser {
     return values;
   }
 
-  List<T> _maybeParseWrappedSeparatedListOf<T>(
+  List<T> _parseWrappedSeparatedListOf<T>(
     T Function(TokenIterator) parse,
+    Exception Function(Token, TokenKind) buildUnexpectedTokenException,
     TokenIterator cursor,
     TokenKind start,
     TokenKind end,
     TokenKind separator,
-    List<T> Function() orElse,
   ) =>
-      _maybeParseWrapped<List<T>>(
+      _parseMaybeWrapped<List<T>>(
           (cursor) => cursor.peek?.kind == end
               ? []
               : _parseSeparatedListOf(
@@ -272,32 +322,19 @@ class Parser {
                   cursor,
                   separator,
                 ),
-          orElse,
+          (cursor) => throw buildUnexpectedTokenException(cursor.peek!, start),
+          buildUnexpectedTokenException,
           cursor,
           start,
           end);
-
-  List<T> _parseWrappedSeparatedListOf<T>(
-    T Function(TokenIterator) parse,
-    TokenIterator cursor,
-    TokenKind start,
-    TokenKind end,
-    TokenKind separator,
-  ) =>
-      _maybeParseWrappedSeparatedListOf(
-        parse,
-        cursor,
-        start,
-        end,
-        separator,
-        () => throw StateError('Invalid start token'),
-      );
 
   TypeModifierMember parseTypeModifierMember(TokenIterator cursor) {
     final isImplement =
         _parseOneIdentifierOf(cursor, {'mix', 'implement'}) == 'implement';
     final types = _parseWrappedSeparatedListOf(
       parseType,
+      (t, tk) =>
+          _UnexpectedTokenException<TypeModifierMember>(t, expectedKind: tk),
       cursor,
       TokenKind.OpenBracket,
       TokenKind.CloseBracket,
@@ -313,6 +350,7 @@ class Parser {
     if (start?.kind == TokenKind.OpenBracket) {
       body = _parseWrapped(
         (it) => TokenList.fromIterator(it),
+        (t, tk) => _UnexpectedTokenException<DartBody>(t, expectedKind: tk),
         cursor,
         TokenKind.OpenBracket,
         TokenKind.CloseBracket,
@@ -320,8 +358,13 @@ class Parser {
     } else if (start?.kind == TokenKind.EqualsGreater) {
       isExpression = true;
       // TODO this is not correct, an lambda would break the logic.
-      body = _parseWrapped((it) => TokenList.fromIterator(it), cursor,
-          TokenKind.EqualsGreater, TokenKind.Semicolon);
+      body = _parseWrapped(
+        (it) => TokenList.fromIterator(it),
+        (t, tk) => _UnexpectedTokenException<DartBody>(t, expectedKind: tk),
+        cursor,
+        TokenKind.EqualsGreater,
+        TokenKind.Semicolon,
+      );
     } else {
       throw _UnexpectedTokenException<DartBody>(start!, expectedKinds: {
         TokenKind.OpenBracket,
@@ -335,9 +378,11 @@ class Parser {
       TokenIterator cursor) {
     final isFactory =
         _parseOneIdentifierOf(cursor, {'factory', 'constructor'}) == 'factory';
-    final name = _maybeParseWrapped(
+    final name = _parseMaybeWrapped(
       parseIdentifier,
-      () => null,
+      (cursor) => null,
+      (t, tk) => _UnexpectedTokenException<FactoryOrConstructorMember>(t,
+          expectedKind: tk),
       cursor,
       TokenKind.OpenParens,
       TokenKind.CloseParens,
@@ -432,6 +477,8 @@ class Parser {
           if (token.kind == TokenKind.OpenSquareBracket) {
             optional = _parseWrappedSeparatedListOf(
               parseDataReference,
+              (t, tk) => _UnexpectedTokenException<FunctionParameters>(t,
+                  expectedKind: tk),
               cursor,
               TokenKind.OpenSquareBracket,
               TokenKind.CloseSquareBracket,
@@ -443,6 +490,8 @@ class Parser {
           if (token.kind == TokenKind.OpenBracket) {
             named = _parseWrappedSeparatedListOf(
               parseDataReference,
+              (t, tk) => _UnexpectedTokenException<FunctionParameters>(t,
+                  expectedKind: tk),
               cursor,
               TokenKind.OpenBracket,
               TokenKind.CloseBracket,
@@ -462,6 +511,8 @@ class Parser {
             Map.fromEntries((named ?? []).map((e) => MapEntry(e.name, e))),
             typeParameters);
       },
+      (t, tk) =>
+          _UnexpectedTokenException<FunctionParameters>(t, expectedKind: tk),
       cursor,
       TokenKind.OpenParens,
       TokenKind.CloseParens,
@@ -523,6 +574,8 @@ class Parser {
   List<TypeParameter> _parseTypeParameterList(TokenIterator cursor) =>
       _maybeParseWrappedSeparatedListOf(
           parseTypeParameter,
+          (t, tk) =>
+              _UnexpectedTokenException<TypeParameter>(t, expectedKind: tk),
           cursor,
           TokenKind.Smaller,
           TokenKind.Greater,
@@ -600,6 +653,7 @@ class Parser {
   DataRecord parseDataRecord(TokenIterator cursor) =>
       DataRecord(_parseWrappedSeparatedListOf(
         parseDataReference,
+        (t, tk) => _UnexpectedTokenException<DataRecord>(t, expectedKind: tk),
         cursor,
         TokenKind.OpenBracket,
         TokenKind.CloseBracket,
@@ -639,8 +693,14 @@ class Parser {
   }
 
   Call parseCall(TokenIterator cursor, Expression callee) {
-    final args = _parseWrappedSeparatedListOf(parseExpression, cursor,
-        TokenKind.OpenParens, TokenKind.CloseParens, TokenKind.Comma);
+    final args = _parseWrappedSeparatedListOf(
+      parseExpression,
+      (t, tk) => _UnexpectedTokenException<Call>(t, expectedKind: tk),
+      cursor,
+      TokenKind.OpenParens,
+      TokenKind.CloseParens,
+      TokenKind.Comma,
+    );
 
     return Call(callee, args);
   }
@@ -702,6 +762,7 @@ class Parser {
     _expectIdentifier<DeriveClause>(cursor, 'derive');
     final derivations = _parseWrappedSeparatedListOf(
       parseExpression,
+      (t, tk) => _UnexpectedTokenException<DeriveClause>(t, expectedKind: tk),
       cursor,
       TokenKind.OpenParens,
       TokenKind.CloseParens,
@@ -783,7 +844,7 @@ class Parser {
 
   Documentation parseDocumentation(TokenIterator cursor) {
     final docKinds = {TokenKind.LineComment, TokenKind.BlockComment};
-    _expectKinds<Documentation>(cursor, docKinds);
+    _expectPeekKinds<Documentation>(cursor, docKinds);
     final comments =
         cursor.consumeWhile((token) => docKinds.contains(token.kind))!;
 
