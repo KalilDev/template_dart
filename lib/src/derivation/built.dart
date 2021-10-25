@@ -67,15 +67,31 @@ enum _SerializationKind {
   withoutWireInfo,
 }
 
+enum BuiltConstructorKind {
+  auto,
+  positional,
+  named,
+  builder,
+}
+
+class BuiltConstructor {
+  final String? name;
+  final BuiltConstructorKind kind;
+
+  BuiltConstructor(this.name, this.kind);
+}
+
 class BuiltConfiguration {
   final Type? builderType;
   final _SerializationKind serializationKind;
   final bool serializablePreserveGenerics;
+  final List<BuiltConstructor> builtConstructor;
 
   const BuiltConfiguration(
     this.builderType,
     this.serializationKind,
     this.serializablePreserveGenerics,
+    this.builtConstructor,
   );
 }
 
@@ -101,20 +117,40 @@ class BuiltDeriverSignature
     if (serializable == null) {
       type = _SerializationKind.none;
     } else {
-      final args = serializable.args!;
+      final args = serializable.args ?? [_Auto.instance];
       if (args.maybeSingleOfType<_WithWireTypeInfo>() != null) {
         type = _SerializationKind.withWireInfo;
       }
       if (args.maybeSingleOfType<_WithoutWireTypeInfo>() != null) {
         type = _SerializationKind.withoutWireInfo;
       }
+      type ??= _SerializationKind.auto;
     }
     final preserveGenerics =
         serializable?.args?.maybeSingleOfType<_PreserveGenerics>() != null;
+    final constructors = <BuiltConstructor>[];
+    for (final e in args.whereType<_Constructor>()) {
+      final name = e.args.maybeSingleOfType<MetaString>()?.dartValue;
+      BuiltConstructorKind kind;
+      if (e.args.maybeSingleOfType<_Named>() != null) {
+        kind = BuiltConstructorKind.named;
+      } else if (e.args.maybeSingleOfType<_Positional>() != null) {
+        kind = BuiltConstructorKind.positional;
+      } else if (e.args.maybeSingleOfType<_Builder>() != null) {
+        kind = BuiltConstructorKind.builder;
+      } else {
+        kind = BuiltConstructorKind.auto;
+      }
+      constructors.add(BuiltConstructor(name, kind));
+    }
+    if (constructors.isEmpty) {
+      constructors.add(BuiltConstructor(null, BuiltConstructorKind.auto));
+    }
     return BuiltConfiguration(
       builderType,
-      type ?? _SerializationKind.none,
+      type,
       preserveGenerics,
+      constructors,
     );
   }
 }
@@ -145,6 +181,10 @@ class BuiltDeriver extends SimpleDeriver<BuiltConfiguration> {
       [klass.type, builderType],
       false,
     );
+    final syntheticBuiltType = InstantiatedType(
+        Identifier('_\$' + klass.type.name.contents),
+        klass.type.typeParameters,
+        false);
     final isSupertypeOfUnion = klass.isSupertype && klass.isUnion;
 
     if (klass.isUnion) {
@@ -177,6 +217,67 @@ class BuiltDeriver extends SimpleDeriver<BuiltConfiguration> {
     } else {
       throw StateError('');
     }
+
+    final refCount = refs.length;
+    final constructors = args.builtConstructor.map(
+      (e) => e.kind == BuiltConstructorKind.auto
+          ? BuiltConstructor(
+              e.name,
+              refCount <= 2
+                  ? BuiltConstructorKind.positional
+                  : refCount >= 10
+                      ? BuiltConstructorKind.builder
+                      : BuiltConstructorKind.named)
+          : e,
+    );
+
+    if (!isSupertypeOfUnion) {
+      var hadBuilder = false;
+      for (final e in constructors) {
+        final isBuilder = e.kind == BuiltConstructorKind.builder;
+        hadBuilder = isBuilder || hadBuilder;
+        switch (e.kind) {
+          case BuiltConstructorKind.builder:
+            bdr.builder.constructors.add(
+              _builderConstructor(
+                e.name,
+                klass,
+                builderType,
+                syntheticBuiltType,
+              ),
+            );
+            break;
+          case BuiltConstructorKind.positional:
+            bdr.builder.constructors.add(_positionalOrNamedConstructor(
+              e.name,
+              syntheticBuiltType,
+              refs,
+              false,
+            ));
+            break;
+          case BuiltConstructorKind.named:
+            bdr.builder.constructors.add(_positionalOrNamedConstructor(
+              e.name,
+              syntheticBuiltType,
+              refs,
+              true,
+            ));
+            break;
+          default:
+        }
+      }
+      if (!hadBuilder) {
+        bdr.builder.constructors.add(
+          _builderConstructor(
+            'builder',
+            klass,
+            builderType,
+            syntheticBuiltType,
+          ),
+        );
+      }
+    }
+
     //
     // Serialization
     //
