@@ -175,6 +175,7 @@ class BuiltDeriver extends SimpleDeriver<BuiltConfiguration> {
   @override
   void deriveDataClass(DataClass klass, DartClassBuilder bdr,
       ProgramContext context, BuiltConfiguration args) {
+    bdr.builder.abstract = true;
     final builderType = args.builderType ?? _builderTypeFromBuilt(klass);
     final builtType = InstantiatedType(
       Identifier('Built'),
