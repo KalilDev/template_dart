@@ -46,6 +46,15 @@ class HiveDeriver extends SimpleDeriver<void> {
             ),
           )
         : field);
+    bdr.builder.methods.map((getter) => fieldNameIdMap.containsKey(getter.name)
+        ? getter.rebuild(
+            (bdr) => bdr.annotations.add(
+              b.refer('HiveField').call(
+                [b.literal(fieldNameIdMap[getter.name])],
+              ),
+            ),
+          )
+        : getter);
   }
 }
 
