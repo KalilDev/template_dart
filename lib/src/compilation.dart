@@ -13,6 +13,7 @@ class DataClass {
   final DataRecord? body;
   final List<Annotation>? annotations;
   final List<Metadata>? metadatas;
+  final Documentation? documentation;
   final InstantiatedType type;
 
   bool get isSupertype =>
@@ -27,6 +28,7 @@ class DataClass {
     this.body,
     this.annotations,
     this.metadatas,
+    this.documentation,
     this.type,
   );
 }
@@ -89,7 +91,7 @@ class DartClassBuilder {
       builder.fields.addAll(klass.body!.refs.map(referenceToField));
     }
     builder
-      ..docs.addAll(documentationsFrom(klass.parentDeclaration))
+      ..docs.addAll(documentationFrom(klass.documentation))
       ..annotations
           .addAll(klass.annotations?.map(annotationToExpression) ?? []);
     return DartClassBuilder._(klass, builder);
@@ -147,11 +149,13 @@ class InitialCompilationEnviroment {
           final body = v.body;
           return MapEntry(
               k,
+              // Either the Union supertype or the class body.
               DartClassBuilder(DataClass(
                   v,
                   body is DataClassBody ? body.body : null,
-                  body is DataClassBody ? v.annotations : null,
-                  body is DataClassBody ? v.metadata : null,
+                  v.annotations,
+                  v.metadata,
+                  v.comments,
                   v.typeDeclaration.type.instantiation())));
         })));
 }
@@ -171,6 +175,7 @@ class CompilationEnviromentBuilder
         node.body,
         parent.annotations,
         parent.metadata,
+        parent.comments,
         parent.typeDeclaration.type.instantiation(),
       );
   }
@@ -186,6 +191,7 @@ class CompilationEnviromentBuilder
           node.body,
           node.annotations,
           node.metadata,
+          node.comments,
           InstantiatedType(
               node.name,
               parent.typeDeclaration.type.instantiation().typeParameters,
@@ -215,6 +221,7 @@ class CompilationEnviromentBuilder
       null,
       parent.annotations,
       parent.metadata,
+      parent.comments,
       parent.typeDeclaration.type.instantiation(),
     );
     return node.constructors
@@ -406,8 +413,10 @@ b.Expression annotationToExpression(Annotation ann) =>
     b.CodeExpression(b.Code(dartPrinter(ann.expression)));
 Iterable<b.Expression> annotationsFrom(AnnotatedNode node) =>
     node.annotations?.map(annotationToExpression) ?? [];
+Iterable<String> documentationFrom(Documentation? doc) =>
+    doc?.comments.map((t) => t.content) ?? [];
 Iterable<String> documentationsFrom(DocumentedNode node) =>
-    node.comments?.comments.map((t) => t.content) ?? [];
+    documentationFrom(node.comments);
 
 b.Field referenceToField(DataReference reference) => b.Field((bdr) => bdr
   ..name = reference.name.contents
