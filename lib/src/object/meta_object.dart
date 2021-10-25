@@ -1,4 +1,3 @@
-import '../compilation.dart';
 import '../syntax.dart';
 import 'meta_exception.dart';
 import 'meta_type.dart';
@@ -14,6 +13,7 @@ abstract class MetaObject {
   static final MetaObject $null = MetaNull._();
   static final MetaObject $true = MetaBool._(true);
   static final MetaObject $false = MetaBool._(false);
+  @override
   String toString() =>
       'MetaObject(${dartValue != this ? 'dartValue: $dartValue, ' : ''}type: ${printer(type)})';
 }
@@ -50,6 +50,7 @@ class MetaNull extends MetaObject {
 }
 
 class MetaString extends MetaObject {
+  @override
   final String dartValue;
 
   MetaString(this.dartValue);
@@ -64,6 +65,7 @@ class MetaString extends MetaObject {
 }
 
 class MetaDouble extends MetaObject {
+  @override
   final double dartValue;
 
   MetaDouble(this.dartValue);
@@ -78,6 +80,7 @@ class MetaDouble extends MetaObject {
 }
 
 class MetaInt extends MetaObject {
+  @override
   final int dartValue;
 
   MetaInt(this.dartValue);

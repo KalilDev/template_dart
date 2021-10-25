@@ -141,6 +141,7 @@ class InstantiatedType extends Type {
   final bool isNullable;
 
   InstantiatedType(this.name, this.typeParameters, this.isNullable);
+  @override
   InstantiatedType withNullability(bool nullability) =>
       InstantiatedType(name, typeParameters, nullability);
 }

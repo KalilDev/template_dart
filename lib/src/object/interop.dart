@@ -53,6 +53,7 @@ abstract class InteropObject<Self> extends MetaObject {
 class InteropMethod extends MetaObject {
   InteropMethod(this.dartValue);
 
+  @override
   MetaObject call(List<MetaObject> args) => dartValue.call(args);
 
   @override
@@ -139,7 +140,9 @@ class MetaGroupMarker<Self extends MetaGroupMarker<Self>> extends MetaObject {
   Type get type => _Nt('MetaGroupMarker', [_0t('$Self')]);
 }
 
+// ignore: non_constant_identifier_names
 InstantiatedType _0t(String name, [bool nullable = false]) =>
     _Nt(name, [], nullable);
+// ignore: non_constant_identifier_names
 InstantiatedType _Nt(String name, List<Type> args, [bool nullable = false]) =>
     InstantiatedType(Identifier(name), args, nullable);

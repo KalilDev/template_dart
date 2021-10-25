@@ -412,6 +412,7 @@ class PrettyPrintVisitor extends ASTVisitor<StringBuffer> {
     return buff;
   }
 
+  // ignore: unused_element
   StringBuffer _writeWrappedList(
     Iterable<Object> values,
     StringBuffer buff,

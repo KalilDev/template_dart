@@ -1,7 +1,6 @@
 import 'dart:core' hide Type;
 import 'package:code_builder/code_builder.dart';
 import 'package:code_builder/code_builder.dart' as b;
-import 'package:meta/meta.dart';
 import 'derivers.dart';
 import 'hive.dart';
 import '../compilation.dart';

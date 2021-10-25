@@ -1,6 +1,5 @@
 import 'package:tuple/tuple.dart';
 
-import '../compilation.dart';
 import 'meta_object.dart';
 import 'meta_exception.dart';
 import '../syntax.dart';
@@ -30,6 +29,7 @@ class MetaType extends MetaObject {
 
   @override
   Type get type => _0t('Type');
+  @override
   String toString() => printer(dartValue);
 }
 
@@ -57,7 +57,9 @@ Iterable<Tuple2<A, B>> zip<A, B>(Iterable<A> as, Iterable<B> bs) sync* {
   }
 }
 
+// ignore: non_constant_identifier_names
 InstantiatedType _0t(String name, [bool nullable = false]) =>
     _Nt(name, [], nullable);
+// ignore: non_constant_identifier_names
 InstantiatedType _Nt(String name, List<Type> args, [bool nullable = false]) =>
     InstantiatedType(Identifier(name), args, nullable);

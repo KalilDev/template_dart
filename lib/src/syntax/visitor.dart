@@ -1,6 +1,5 @@
 import 'ast.dart';
 import 'dart:core' hide Type;
-import '../grammar/token.dart';
 
 abstract class ASTVisitor<T> {
   T visitNode(ASTNode node, [T? context]) {

@@ -1,9 +1,9 @@
-import '../compilation.dart';
 import '../syntax.dart';
 import 'meta_object.dart';
 import 'dart:core' hide Type;
 
 class MetaException extends MetaObject {
+  @override
   String toString() => '$runtimeType';
   @override
   MetaObject access(String name) => throw UnimplementedError();
@@ -23,6 +23,7 @@ class NullCallException extends MetaException {
   final List<MetaObject> args;
 
   NullCallException(this.name, this.args);
+  @override
   String toString() => '$runtimeType: with name: $name and args: $args';
 }
 
@@ -30,6 +31,7 @@ class NullAccessException extends MetaException {
   final String name;
 
   NullAccessException(this.name);
+  @override
   String toString() => '$runtimeType: with name: $name';
 }
 
@@ -38,6 +40,7 @@ class NoSuchThing extends MetaException {
 
   NoSuchThing(this.name);
 
+  @override
   String toString() => '$runtimeType: with name: ${name.contents}';
 }
 
@@ -52,6 +55,7 @@ class NoSuchFieldException extends MetaException {
 }
 
 class NotCallableException extends MetaException {
+  @override
   final Type type;
   NotCallableException(this.type);
   @override

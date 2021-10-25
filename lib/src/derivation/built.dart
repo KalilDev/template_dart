@@ -4,9 +4,7 @@ import 'package:code_builder/code_builder.dart' as b;
 import 'package:tuple/tuple.dart';
 import '../compilation.dart';
 import '../syntax.dart';
-import '../syntax/ast.dart';
 import '../object.dart';
-import 'derivation.dart';
 import 'derivers.dart';
 import 'signature.dart';
 
@@ -109,14 +107,14 @@ class BuiltDeriverSignature
   };
 
   @override
-  BuiltConfiguration instantiateConfiguration(List<MetaObject> args) {
-    final builderType = args
+  BuiltConfiguration instantiateConfiguration(List<MetaObject> arguments) {
+    final builderType = arguments
         .maybeSingleOfType<_Builder>()
         ?.args!
         .single
         .as<MetaType>()
         .dartValue;
-    final serializable = args.maybeSingleOfType<_Serializable>();
+    final serializable = arguments.maybeSingleOfType<_Serializable>();
     _SerializationKind? type;
     if (serializable == null) {
       type = _SerializationKind.none;
@@ -133,7 +131,7 @@ class BuiltDeriverSignature
     final preserveGenerics =
         serializable?.args?.maybeSingleOfType<_PreserveGenerics>() != null;
     final constructors = <BuiltConstructor>[];
-    for (final e in args.whereType<_Constructor>()) {
+    for (final e in arguments.whereType<_Constructor>()) {
       final name = e.args.maybeSingleOfType<MetaString>()?.dartValue;
       BuiltConstructorKind kind;
       if (e.args.maybeSingleOfType<_Named>() != null) {
@@ -478,7 +476,7 @@ extension on Object {
   T as<T>() => this as T;
 }
 
-extension _<T> on Iterable<T> {
+extension _ItE<T> on Iterable<T> {
   T? get maybeSingle => length == 1 ? single : null;
   T? get maybeFirst => isEmpty ? null : first;
   E? maybeSingleOfType<E>() => whereType<E>().maybeSingle;

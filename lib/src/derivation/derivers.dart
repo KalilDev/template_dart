@@ -55,6 +55,7 @@ abstract class SimpleDeriver<Args> extends Deriver<ProgramContext, Args> {
 class NoArgsCallbacksDeriver extends SimpleDeriver<void> {
   final NoArgsDataClassDeriver? _deriveDataClass;
   final NoArgsDataDeclarationDeriver? _deriveDataDeclaration;
+  @override
   final RawArgumentsSignature signature = RawArgumentsSignature();
 
   NoArgsCallbacksDeriver(

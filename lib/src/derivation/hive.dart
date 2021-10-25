@@ -1,6 +1,5 @@
 import 'dart:core' hide Type;
 import 'package:code_builder/code_builder.dart' as b;
-import 'derivation.dart';
 import '../compilation.dart';
 import '../syntax/ast.dart';
 import '../object.dart';
@@ -8,6 +7,7 @@ import 'derivers.dart';
 import 'signature.dart';
 
 class HiveDeriver extends SimpleDeriver<void> {
+  @override
   final DeriverSignature<void> signature = NoArgumentsDeriverSignature();
 
   HiveDeriver() : super('Hive');
@@ -60,8 +60,7 @@ class HiveDeriver extends SimpleDeriver<void> {
   }
 }
 
-extension _<T> on Iterable<T> {
+extension _ItE<T> on Iterable<T> {
   T? get maybeSingle => length == 1 ? single : null;
-  T? get maybeFirst => isEmpty ? null : first;
   E? maybeSingleOfType<E>() => whereType<E>().maybeSingle;
 }

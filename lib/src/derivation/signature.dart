@@ -1,4 +1,3 @@
-import '../compilation.dart';
 import '../object.dart';
 import 'dart:core' hide Type;
 
@@ -16,7 +15,7 @@ class NoArgumentsDeriverSignature extends DeriverSignature<void> {
   bool areArgsValid(List<MetaObject> arguments) => arguments.isEmpty;
 
   @override
-  void instantiateConfiguration(List<MetaObject> arguments) => null;
+  void instantiateConfiguration(List<MetaObject> arguments) {}
 
   @override
   String toString() => 'Ø';
@@ -48,6 +47,7 @@ abstract class UnorderedArgumentsSignature<T> extends DeriverSignature<T> {
     return true;
   }
 
+  @override
   String toString() => 'unordered{${argumentTypes.map(printer).join(',')}}';
 }
 
@@ -74,6 +74,7 @@ abstract class OrderedArgumentsSignature<T> extends DeriverSignature<T> {
     return true;
   }
 
+  @override
   String toString() => '[${argumentTypes.map(printer).join(',')}]';
 }
 
@@ -95,6 +96,7 @@ class PositionalArgumentsSignature
     };
   }
 
+  @override
   String toString() =>
       '[${arguments.entries.map((e) => '${e.key} :: ${printer(e.value)}').join(',')}]';
 }

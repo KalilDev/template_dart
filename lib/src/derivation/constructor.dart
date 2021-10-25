@@ -42,10 +42,10 @@ class ConstructorDeriver extends SimpleDeriver<ConstructorConfiguration> {
   void deriveDataClass(
     DataClass klass,
     DartClassBuilder bdr,
-    ProgramContext ctx,
+    ProgramContext context,
     ConstructorConfiguration args,
   ) {
-    super.deriveDataClass(klass, bdr, ctx, args);
+    super.deriveDataClass(klass, bdr, context, args);
     bdr.builder.constructors.clear();
     final constant = bdr.builder.fields.build().every((field) =>
         field.modifier == FieldModifier.final$ ||

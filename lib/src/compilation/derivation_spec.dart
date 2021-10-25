@@ -26,7 +26,9 @@ class DeriveSpec extends InteropObject<DeriveSpec> {
   Type get type => _Nt('DeriveSpec', [_0t(name)]);
 }
 
+// ignore: non_constant_identifier_names
 InstantiatedType _0t(String name, [bool nullable = false]) =>
     _Nt(name, [], nullable);
+// ignore: non_constant_identifier_names
 InstantiatedType _Nt(String name, List<Type> args, [bool nullable = false]) =>
     InstantiatedType(Identifier(name), args, nullable);

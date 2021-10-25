@@ -143,8 +143,8 @@ class Scanner {
 }
 
 extension StringE on String {
-  Iterable<T> _splitMapEmptyString<T>(T? onMatch(Match match),
-      T? onNonMatch(int start, String nonMatch)) sync* {
+  Iterable<T> _splitMapEmptyString<T>(T? Function(Match match) onMatch,
+      T? Function(int start, String nonMatch) onNonMatch) sync* {
     // Pattern is the empty string.
     int length = this.length;
     int i = 0;
@@ -158,13 +158,13 @@ extension StringE on String {
         yield r1;
       }
       // Special case to avoid splitting a surrogate pair.
-      int code = this.codeUnitAt(i);
+      int code = codeUnitAt(i);
       if ((code & ~0x3FF) == 0xD800 && length > i + 1) {
         // Leading surrogate;
-        code = this.codeUnitAt(i + 1);
+        code = codeUnitAt(i + 1);
         if ((code & ~0x3FF) == 0xDC00) {
           // Matching trailing surrogate.
-          final r2 = onNonMatch(i, this.substring(i, i + 2));
+          final r2 = onNonMatch(i, substring(i, i + 2));
           if (r2 != null) {
             yield r2;
           }
@@ -179,7 +179,7 @@ extension StringE on String {
       }
       i++;
     }
-    final r4 = onMatch(new _StringMatch(i, this, ""));
+    final r4 = onMatch(_StringMatch(i, this, ""));
     if (r4 != null) {
       yield r4;
     }
@@ -189,10 +189,12 @@ extension StringE on String {
     }
   }
 
+  // ignore: prefer_void_to_null
   static Null _returnNull([Object? _, Object? __]) => null;
 
   Iterable<T> splitMap<T>(Pattern pattern,
-      {T? onMatch(Match match)?, T? onNonMatch(int start, String nonMatch)?}) {
+      {T? Function(Match match)? onMatch,
+      T? Function(int start, String nonMatch)? onNonMatch}) {
     onMatch ??= _returnNull;
     onNonMatch ??= _returnNull;
     if (pattern is String) {
@@ -227,17 +229,22 @@ extension StringE on String {
 class _StringMatch implements Match {
   const _StringMatch(this.start, this.input, this.pattern);
 
+  @override
   int get end => start + pattern.length;
+  @override
   String operator [](int g) => group(g);
+  @override
   int get groupCount => 0;
 
+  @override
   String group(int group) {
     if (group != 0) {
-      throw new RangeError.value(group);
+      throw RangeError.value(group);
     }
     return pattern;
   }
 
+  @override
   List<String> groups(List<int> groups) {
     List<String> result = <String>[];
     for (int g in groups) {
@@ -246,7 +253,10 @@ class _StringMatch implements Match {
     return result;
   }
 
+  @override
   final int start;
+  @override
   final String input;
+  @override
   final String pattern;
 }
