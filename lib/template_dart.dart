@@ -36,6 +36,20 @@ class MetaprogramCompileException implements Exception {
     this.location,
     this.message,
   );
+
+  @override
+  String toString() {
+    final buff = StringBuffer();
+    buff.write('MetaprogramCompileException:');
+    if (range != null) {
+      buff.write(' at range: $range');
+    }
+    if (location != null) {
+      buff.write(' at location: $location');
+    }
+    buff.write(' with message $message');
+    return buff.toString();
+  }
 }
 
 String compileMetaprogram(String input) {
