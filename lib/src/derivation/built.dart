@@ -177,23 +177,33 @@ class BuiltDeriver extends SimpleDeriver<BuiltConfiguration> {
     } else {
       throw StateError('');
     }
+    //
+    // Serialization
+    //
     final serialize = args.serializationKind;
     if (serialize == _SerializationKind.none) {
       return;
     }
 
     if (!isSupertypeOfUnion) {
-      bdr.builder.fields.add(b.Field((bdr) => bdr
+      bdr.builder.methods.add(b.Method((bdr) => bdr
         ..name = 'serializer'
         ..static = true
-        ..type = b.refer(dartPrinter(InstantiatedType(
+        ..type = MethodType.getter
+        ..returns = b.refer(dartPrinter(InstantiatedType(
             Identifier('Serializer'),
-            klass.parentDeclaration.typeDeclaration.type.typeParameters
-                .map((e) => e.constraint ?? MetaType.$Object.dartValue)
-                .toList(),
+            [
+              InstantiatedType(
+                Identifier(klass.name),
+                klass.parentDeclaration.typeDeclaration.type.typeParameters
+                    .map((e) => e.constraint ?? MetaType.$Object.dartValue)
+                    .toList(),
+                false,
+              )
+            ],
             false)))
-        ..modifier = b.FieldModifier.final$
-        ..assignment = b.Code('_\$${lowerCamelCase(klass.name)}Serializer')));
+        ..lambda = true
+        ..body = b.Code('_\$${lowerCamelCase(klass.name)}Serializer')));
     }
     var serializationKind = args.serializationKind;
     serializationKind = serializationKind == _SerializationKind.auto
@@ -221,6 +231,67 @@ class BuiltDeriver extends SimpleDeriver<BuiltConfiguration> {
     }
     super.deriveDataClass(klass, bdr, context, args);
   }
+
+  Constructor _positionalOrNamedConstructor(
+      String? name,
+      InstantiatedType syntheticBuiltType,
+      List<DataReference> refs,
+      bool isNamed) {
+    final params = refs.map(
+      (e) => Parameter(
+        (bdr) => bdr
+          ..name = e.name.contents
+          ..type = b.refer(dartPrinter(e.type))
+          ..named = isNamed
+          ..required = isNamed && !e.type.isNullable,
+      ),
+    );
+    return Constructor(
+      (bdr) => bdr
+        ..name = name
+        ..factory = true
+        ..lambda = true
+        ..body = b.refer(dartPrinter(syntheticBuiltType)).call([
+          b.CodeExpression(b.Code('(__\$bdr)=>__\$bdr' +
+              (refs.isEmpty ? '' : '..') +
+              refs
+                  .map((e) => e.name.contents)
+                  .map((e) => '$e = $e')
+                  .join('..')))
+        ]).code
+        ..requiredParameters.addAll(params),
+    );
+  }
+
+  Constructor _builderConstructor(
+    String? name,
+    DataClass klass,
+    Type builderType,
+    Type syntheticBuiltType,
+  ) =>
+      Constructor((bdr) => bdr
+        ..factory = true
+        ..name = name
+        ..lambda = true
+        ..body = b
+            .refer(dartPrinter(syntheticBuiltType))
+            .call([b.refer('updates')]).code
+        ..optionalParameters.add(
+          Parameter(
+            (bdr) => bdr
+              ..name = 'updates'
+              ..type = b.FunctionType(
+                (bdr) => bdr
+                  ..isNullable = true
+                  ..returnType = b.refer('void')
+                  ..requiredParameters.add(
+                    b.refer(
+                      dartPrinter(builderType),
+                    ),
+                  ),
+              ),
+          ),
+        ));
 
   @override
   DeriverSignature<BuiltConfiguration> get signature => BuiltDeriverSignature();
