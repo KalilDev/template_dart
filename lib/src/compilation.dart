@@ -331,6 +331,10 @@ class CompilationInterpreter {
         derivations.map((d) => evalDerive(d, env, _getDeriverEnviroment));
     for (final spec in specs) {
       context.usedDerivers.add(spec.name);
+      if (!derivers.containsKey(spec.name)) {
+        throw DerivationException(
+            Exception('There is no Derivator named ${spec.name}!'));
+      }
       final deriver = derivers[spec.name]!;
       final args = spec.args ?? [];
 
