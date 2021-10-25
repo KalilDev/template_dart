@@ -69,7 +69,7 @@ String compileMetaprogram(String input) {
     final program = parser.parse();
     final compiler = Compiler(makeCompilationInterpreter());
     final library = compiler.compile(program);
-    return library.accept(DartEmitter()).toString();
+    return library.accept(DartEmitter(useNullSafetySyntax: true)).toString();
   } on SyntaxException catch (e) {
     throw MetaprogramCompileException(
       CompileExceptionType.parsing,
