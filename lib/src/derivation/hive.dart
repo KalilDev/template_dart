@@ -2,8 +2,10 @@ import 'dart:core' hide Type;
 import 'package:code_builder/code_builder.dart' as b;
 import 'derivation.dart';
 import '../compilation.dart';
-import '../ast.dart';
+import '../syntax/ast.dart';
 import '../object.dart';
+import 'derivers.dart';
+import 'signature.dart';
 
 class HiveDeriver extends SimpleDeriver<void> {
   final DeriverSignature<void> signature = NoArgumentsDeriverSignature();

@@ -2,20 +2,16 @@ library template_dart;
 
 import 'dart:core' hide Type;
 import 'package:code_builder/code_builder.dart';
+import 'src/grammar.dart';
+import 'src/syntax.dart';
 import 'src/compilation.dart';
-import 'src/token.dart';
-import 'src/derivation/derivation.dart';
-import 'src/object.dart';
-import 'src/scanner.dart';
-import 'src/parser.dart';
+import 'src/derivation.dart';
 
 export 'src/compilation.dart';
-export 'src/token.dart';
+export 'src/derivation.dart';
+export 'src/grammar.dart';
 export 'src/object.dart';
-export 'src/scanner.dart';
-export 'src/derivation/derivation.dart';
-export 'src/parser.dart';
-export 'src/ast.dart';
+export 'src/syntax.dart';
 
 enum CompileExceptionType {
   scanning,

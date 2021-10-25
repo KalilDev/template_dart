@@ -1,7 +1,7 @@
 import 'ast.dart';
 import 'package:tuple/tuple.dart';
 import 'dart:core' hide Type;
-import 'token.dart';
+import '../grammar/token.dart';
 
 abstract class SyntaxException implements Exception {
   final Token atToken;

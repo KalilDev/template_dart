@@ -3,9 +3,12 @@ import 'package:code_builder/code_builder.dart';
 import 'package:code_builder/code_builder.dart' as b;
 import 'package:tuple/tuple.dart';
 import '../compilation.dart';
-import '../ast.dart';
+import '../syntax.dart';
+import '../syntax/ast.dart';
 import '../object.dart';
 import 'derivation.dart';
+import 'derivers.dart';
+import 'signature.dart';
 
 class _Serializable extends MetaMarkerOrGroupMarker<_Serializable> {
   const _Serializable(List<MetaObject>? args) : super(args);

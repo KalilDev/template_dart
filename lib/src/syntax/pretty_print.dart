@@ -1,6 +1,17 @@
+import '../grammar.dart';
+
 import 'ast.dart';
-import 'dart:core' hide Type;
-import 'token.dart';
+import 'visitor.dart';
+
+final _prettyPrinter = PrettyPrintVisitor();
+final _dartPrinter = DartLikePrettyPrintVisitor();
+String dartPrinter(ASTNode node) => _dartPrinter.visitNode(node).toString();
+String printer(ASTNode node) => _prettyPrinter.visitNode(node).toString();
+String printTokens(TokenList list) {
+  final buff = StringBuffer();
+  PrettyPrintVisitor.writeTokenList(list, buff);
+  return buff.toString();
+}
 
 class DartLikePrettyPrintVisitor extends PrettyPrintVisitor {
   @override
@@ -691,117 +702,4 @@ class WrapAndSeparator {
   static const argumentList = WrapAndSeparator('(', ', ', ')');
   static const comma = WrapAndSeparator('', ',', '');
   static const arrowBody = WrapAndSeparator('=> ', '', ';');
-}
-
-mixin ThrowingASTVisitorMixin<T> on ASTVisitor<T> {
-  @override
-  T visitDataClassBody(DataClassBody node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitDataConstructor(DataConstructor node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitDataDeclaration(DataDeclaration node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitDataRecord(DataRecord node, [T? context]) =>
-      throw UnimplementedError();
-  @override
-  T visitDataReference(DataReference node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitDataTypeDeclaration(DataTypeDeclaration node, [T? context]) =>
-      throw UnimplementedError();
-  @override
-  T visitDataUnionBody(DataUnionBody node, [T? context]) =>
-      throw UnimplementedError();
-  @override
-  T visitDeriveClause(DeriveClause node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitFactoryMember(FactoryOrConstructorMember node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitImplementMember(TypeModifierMember node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitInstantiatedType(InstantiatedType node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitMetaProgram(MetaProgram node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitOnDeclaration(OnDeclaration node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitParameterizedType(ParameterizedType node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitTypeParameter(TypeParameter node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitCall(Call node, [T? context]) => throw UnimplementedError();
-
-  @override
-  T visitIdentifier(Identifier node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitLiteral(Literal node, [T? context]) => throw UnimplementedError();
-
-  @override
-  T visitDartBody(DartBody node, [T? context]) => throw UnimplementedError();
-
-  @override
-  T visitFunctionMember(FunctionMember node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitFunctionParameters(FunctionParameters node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitAccess(Access node, [T? context]) => throw UnimplementedError();
-  @override
-  T visitFunctionBody(FunctionBody node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitFunctionDefinition(FunctionDefinition node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitRedirectMember(RedirectMember node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitAnnotation(Annotation node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitDocumentation(Documentation node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitTopLevelDerive(TopLevelDerive node, [T? context]) =>
-      throw UnimplementedError();
-
-  @override
-  T visitMetadata(Metadata node, [T? context]) => throw UnimplementedError();
-
-  @override
-  T visitFunctionType(FunctionType node, [T? context]) =>
-      throw UnimplementedError();
 }
