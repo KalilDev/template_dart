@@ -1,6 +1,7 @@
 import 'dart:core' hide Type;
 import 'package:code_builder/code_builder.dart';
 import 'package:code_builder/code_builder.dart' as b;
+import 'package:tuple/tuple.dart';
 import '../compilation.dart';
 import '../ast.dart';
 import '../object.dart';
@@ -203,15 +204,25 @@ class BuiltDeriver extends SimpleDeriver<BuiltConfiguration> {
     if (!isSupertypeOfUnion) {
       bdr.builder.implements.add(b.refer(dartPrinter(builtType)));
     }
-    bdr.builder.fields.clear();
-    bdr.builder.methods
-        .addAll((klass.body?.refs ?? []).map((e) => b.Method((bdr) => bdr
-          ..name = e.name.contents
-          ..type = MethodType.getter
-          ..annotations.addAll((e.annotations ?? [])
-              .map((e) => dartPrinter(e.expression))
-              .map((e) => CodeExpression(b.Code(e))))
-          ..returns = refer(dartPrinter(e.type)))));
+
+    // Field to abstract getter conversion
+    final fields = bdr.builder.fields.build();
+    final fieldDatas = {
+      for (final field in fields)
+        field.name: Tuple2(field.docs, field.annotations),
+    };
+    final refs = klass.body?.refs ?? [];
+    final refNames = refs.map((e) => e.name.contents).toSet();
+    bdr.builder.fields.where((field) => !refNames.contains(field.name));
+    bdr.builder.methods.addAll(refs.map((e) => b.Method((bdr) => bdr
+      ..name = e.name.contents
+      ..docs.replace(fieldDatas[e.name]?.item1 ?? <String>[])
+      ..annotations.replace(fieldDatas[e.name]?.item2 ?? <b.Expression>[])
+      ..type = MethodType.getter
+      ..annotations.addAll((e.annotations ?? [])
+          .map((e) => dartPrinter(e.expression))
+          .map((e) => CodeExpression(b.Code(e))))
+      ..returns = refer(dartPrinter(e.type)))));
 
     if (bdr.builder.constructors.length != 1) {
       bdr.builder.constructors.add(b.Constructor((b) => b.name = '_'));
