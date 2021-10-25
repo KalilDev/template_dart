@@ -102,6 +102,10 @@ class MetaLangInterpreter {
     'Null': MetaType.$Null,
     'Type': MetaType.$Type,
     'Object': MetaType.$Object,
+    'debugPrint': InteropMethod((args) {
+      print('DEBUG: ${args.join(', ')}');
+      return args.single;
+    }),
     'runtimeType': InteropMethod((args) => MetaType(args.single.type)),
   };
   MetaObject eval(Expression exp, Map<String, MetaObject> enviroment) {
